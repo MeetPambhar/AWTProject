@@ -19,6 +19,8 @@ export async function getBookings() {
     }
 }
 
+// hello
+
 export async function createBooking(prevState: any, formData: FormData) {
     try {
         const resourceId = parseInt(formData.get('resourceId') as string);
