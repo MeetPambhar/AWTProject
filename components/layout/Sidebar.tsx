@@ -22,8 +22,17 @@ const sidebarItems = [
     { label: 'Maintenance', href: '/dashboard/maintenance', icon: Wrench },
 ];
 
-export function Sidebar() {
+export function Sidebar({ role }: { role?: string }) {
     const pathname = usePathname();
+
+    // Filter items based on role (Example: Users & Maintenance only for admin)
+    // Adjust logic as per specific requirements. Checking schema gave: Role enum {admin, user}
+    const filteredItems = sidebarItems.filter(item => {
+        if (item.href === '/dashboard/users' || item.href === '/dashboard/maintenance') {
+            return role === 'admin';
+        }
+        return true;
+    });
 
     return (
         <aside className="w-64 h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0 overflow-y-auto z-20 hidden md:flex">
@@ -37,7 +46,7 @@ export function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-1">
-                {sidebarItems.map((item) => {
+                {filteredItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link

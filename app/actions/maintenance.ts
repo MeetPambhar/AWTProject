@@ -4,19 +4,56 @@ import { prisma } from '@/lib/db';
 import { MaintenanceStatus, Priority } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
-export async function getMaintenanceRecords() {
-    try {
-        const maintenance = await prisma.maintenance.findMany({
-            include: {
-                resource: { select: { name: true } },
-                reporter: { select: { name: true } },
-            },
-            orderBy: { reportedAt: 'desc' },
-        });
-        return { success: true, data: maintenance };
-    } catch (error) {
-        return { success: false, error: 'Failed to fetch maintenance records' };
-    }
+import { unstable_cache } from 'next/cache';
+
+export async function getMaintenanceRecords(params?: { q?: string; status?: string; priority?: string; page?: string; limit?: string }) {
+    return unstable_cache(
+        async () => {
+            try {
+                const where: any = {};
+                const page = parseInt(params?.page || '1');
+                const limit = parseInt(params?.limit || '5');
+                const skip = (page - 1) * limit;
+
+                if (params?.q) {
+                    where.OR = [
+                        { issueTitle: { contains: params.q } },
+                        { issueDescription: { contains: params.q } },
+                        { resource: { name: { contains: params.q } } },
+                    ];
+                }
+
+                if (params?.status) {
+                    where.status = params.status as MaintenanceStatus;
+                }
+
+                if (params?.priority) {
+                    where.priority = params.priority as Priority;
+                }
+
+                const [maintenance, total] = await Promise.all([
+                    prisma.maintenance.findMany({
+                        where,
+                        include: {
+                            resource: { select: { id: true, name: true } },
+                            reporter: { select: { id: true, name: true } },
+                        },
+                        orderBy: { reportedAt: 'desc' },
+                        skip,
+                        take: limit,
+                    }),
+                    prisma.maintenance.count({ where })
+                ]);
+
+                return { success: true, data: maintenance, total, page, limit };
+            } catch (error) {
+                console.error('Error fetching maintenance records:', error);
+                return { success: false, error: 'Failed to fetch maintenance records' };
+            }
+        },
+        ['maintenance-list', JSON.stringify(params)],
+        { revalidate: 60, tags: ['maintenance'] }
+    )();
 }
 
 export async function createMaintenanceReport(prevState: any, formData: FormData) {

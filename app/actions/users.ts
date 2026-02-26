@@ -4,15 +4,51 @@ import { prisma } from '@/lib/db';
 import { User, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
-export async function getUsers() {
-    try {
-        const users = await prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-        });
-        return { success: true, data: users };
-    } catch (error) {
-        return { success: false, error: 'Failed to fetch users' };
-    }
+import { unstable_cache } from 'next/cache';
+
+export async function getUsers(params?: { q?: string; role?: string; department?: string; page?: string; limit?: string }) {
+    return unstable_cache(
+        async () => {
+            try {
+                const where: any = {};
+                const page = parseInt(params?.page || '1');
+                const limit = parseInt(params?.limit || '8');
+                const skip = (page - 1) * limit;
+
+                if (params?.q) {
+                    where.OR = [
+                        { name: { contains: params.q } },
+                        { email: { contains: params.q } },
+                    ];
+                }
+
+                if (params?.role) {
+                    where.role = params.role as Role;
+                }
+
+                if (params?.department) {
+                    where.department = { contains: params.department };
+                }
+
+                const [users, total] = await Promise.all([
+                    prisma.user.findMany({
+                        where,
+                        orderBy: { createdAt: 'desc' },
+                        skip,
+                        take: limit,
+                    }),
+                    prisma.user.count({ where })
+                ]);
+
+                return { success: true, data: users, total, page, limit };
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                return { success: false, error: 'Failed to fetch users' };
+            }
+        },
+        ['users-list', JSON.stringify(params)],
+        { revalidate: 300, tags: ['users'] }
+    )();
 }
 
 export async function getUserById(id: number) {

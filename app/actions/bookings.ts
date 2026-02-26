@@ -4,19 +4,61 @@ import { prisma } from '@/lib/db';
 import { BookingStatus } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
-export async function getBookings() {
-    try {
-        const bookings = await prisma.booking.findMany({
-            include: {
-                user: { select: { name: true, email: true } },
-                resource: { select: { name: true, type: true } },
-            },
-            orderBy: { bookingDate: 'desc' },
-        });
-        return { success: true, data: bookings };
-    } catch (error) {
-        return { success: false, error: 'Failed to fetch bookings' };
-    }
+import { unstable_cache } from 'next/cache';
+
+export async function getBookings(params?: { q?: string; status?: string; resourceId?: string; page?: string; limit?: string }) {
+    return unstable_cache(
+        async () => {
+            try {
+                const where: any = {};
+                const page = parseInt(params?.page || '1');
+                const limit = parseInt(params?.limit || '5');
+                const skip = (page - 1) * limit;
+
+                if (params?.q) {
+                    where.OR = [
+                        { purpose: { contains: params.q } },
+                        { user: { name: { contains: params.q } } },
+                        { resource: { name: { contains: params.q } } },
+                    ];
+                }
+
+                if (params?.status) {
+                    where.status = params.status as BookingStatus;
+                }
+
+                if (params?.resourceId) {
+                    where.resourceId = parseInt(params.resourceId);
+                }
+
+                const [bookings, total] = await Promise.all([
+                    prisma.booking.findMany({
+                        where,
+                        include: {
+                            user: true,
+                            resource: {
+                                include: {
+                                    type: true,
+                                    building: true,
+                                }
+                            },
+                        },
+                        orderBy: { bookingDate: 'desc' },
+                        skip,
+                        take: limit,
+                    }),
+                    prisma.booking.count({ where })
+                ]);
+
+                return { success: true, data: bookings, total, page, limit };
+            } catch (error) {
+                console.error('Error fetching bookings:', error);
+                return { success: false, error: 'Failed to fetch bookings' };
+            }
+        },
+        ['bookings-list', JSON.stringify(params)],
+        { revalidate: 30, tags: ['bookings'] }
+    )();
 }
 
 // hello
