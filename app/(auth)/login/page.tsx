@@ -7,8 +7,8 @@ import { login } from '@/app/actions/auth';
 
 const initialState = {
     error: '',
-};
-
+}; 
+// c
 export default function LoginPage() {
     const [state, action, isPending] = useActionState(login, initialState);
 
