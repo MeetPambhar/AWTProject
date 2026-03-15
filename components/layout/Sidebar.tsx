@@ -74,17 +74,16 @@ export function Sidebar({ role }: { role?: string }) {
                     <Settings className="w-5 h-5" />
                     Settings
                 </Link>
-                <form action={async () => {
-                    await logout();
-                }}>
-                    <button
-                        type="submit"
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Sign Out
-                    </button>
-                </form>
+                <button
+                    onClick={async () => {
+                        await logout();
+                        window.location.href = '/login';
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
+                >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                </button>
             </div>
         </aside>
     );

@@ -17,7 +17,7 @@ export async function createSession(userId: number, role: string) {
 
     (await cookies()).set('session', session, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         expires: expiresAt,
         sameSite: 'lax',
         path: '/',
@@ -35,7 +35,7 @@ export async function updateSession() {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     (await cookies()).set('session', session, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         expires: expiresAt,
         sameSite: 'lax',
         path: '/',
@@ -43,7 +43,15 @@ export async function updateSession() {
 }
 
 export async function deleteSession() {
-    (await cookies()).delete('session');
+    const cookieStore = await cookies();
+    cookieStore.set('session', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        expires: new Date(0),
+        sameSite: 'lax',
+        path: '/',
+    });
+    cookieStore.delete('session');
 }
 
 export async function encrypt(payload: SessionPayload) {

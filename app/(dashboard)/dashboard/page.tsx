@@ -1,7 +1,4 @@
-import { getBookings } from '@/app/actions/bookings';
-import { getResources } from '@/app/actions/resources';
-import { getUsers } from '@/app/actions/users';
-import { getMaintenanceRecords } from '@/app/actions/maintenance';
+import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import {
     Users,
@@ -13,28 +10,42 @@ import {
 } from 'lucide-react';
 
 export default async function DashboardPage() {
-    // Fetch data in parallel for the dashboard
+    // Fetch precise counts and recent data for the dashboard
     const [
-        bookingsRes,
-        resourcesRes,
-        usersRes,
-        maintenanceRes
+        totalBookings,
+        totalResources,
+        totalUsers,
+        activeMaintenanceCount,
+        recentBookings,
+        activeMaintenance
     ] = await Promise.all([
-        getBookings(),
-        getResources(),
-        getUsers(),
-        getMaintenanceRecords()
+        prisma.booking.count(),
+        prisma.resource.count(),
+        prisma.user.count(),
+        prisma.maintenance.count({ where: { status: { not: 'resolved' } } }),
+        prisma.booking.findMany({
+            take: 5,
+            orderBy: { bookingDate: 'desc' },
+            include: {
+                user: true,
+                resource: true,
+            },
+        }),
+        prisma.maintenance.findMany({
+            take: 5,
+            where: { status: { not: 'resolved' } },
+            orderBy: { reportedAt: 'desc' },
+            include: {
+                resource: true,
+                reporter: true,
+            },
+        })
     ]);
-
-    const bookings = bookingsRes.success ? bookingsRes.data : [];
-    const resources = resourcesRes.success ? resourcesRes.data : [];
-    const users = usersRes.success ? usersRes.data : [];
-    const maintenance = maintenanceRes.success ? maintenanceRes.data : [];
 
     const stats = [
         {
             label: 'Total Bookings',
-            value: bookings?.length || 0,
+            value: totalBookings,
             icon: CalendarDays,
             color: 'text-blue-500',
             bg: 'bg-blue-500/10',
@@ -42,7 +53,7 @@ export default async function DashboardPage() {
         },
         {
             label: 'Total Resources',
-            value: resources?.length || 0,
+            value: totalResources,
             icon: Building2,
             color: 'text-violet-500',
             bg: 'bg-violet-500/10',
@@ -50,7 +61,7 @@ export default async function DashboardPage() {
         },
         {
             label: 'Active Users',
-            value: users?.length || 0,
+            value: totalUsers,
             icon: Users,
             color: 'text-emerald-500',
             bg: 'bg-emerald-500/10',
@@ -58,7 +69,7 @@ export default async function DashboardPage() {
         },
         {
             label: 'Maintenance Issues',
-            value: maintenance?.filter((m: any) => m.status !== 'resolved').length || 0,
+            value: activeMaintenanceCount,
             icon: Wrench,
             color: 'text-amber-500',
             bg: 'bg-amber-500/10',
@@ -105,13 +116,13 @@ export default async function DashboardPage() {
                         Recent Bookings
                     </h3>
                     <div className="space-y-4">
-                        {bookings?.slice(0, 5).map((booking: any) => (
+                        {recentBookings.map((booking: any) => (
                             <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${booking.status === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`} />
                                     <div>
-                                        <p className="text-sm font-medium">{booking.resource.name}</p>
-                                        <p className="text-xs text-muted-foreground">by {booking.user.name}</p>
+                                        <p className="text-sm font-medium">{booking.resource?.name || 'Unknown Resource'}</p>
+                                        <p className="text-xs text-muted-foreground">by {booking.user?.name || 'Unknown User'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -122,7 +133,7 @@ export default async function DashboardPage() {
                                 </div>
                             </div>
                         ))}
-                        {(!bookings || bookings.length === 0) && (
+                        {recentBookings.length === 0 && (
                             <p className="text-sm text-muted-foreground text-center py-4">No recent bookings found.</p>
                         )}
                     </div>
@@ -135,21 +146,21 @@ export default async function DashboardPage() {
                         Active Maintenance
                     </h3>
                     <div className="space-y-4">
-                        {maintenance?.slice(0, 5).map((m: any) => (
+                        {activeMaintenance.map((m: any) => (
                             <div key={m.id} className="flex items-start gap-4 p-3 rounded-lg border border-border hover:border-primary/20 transition-colors">
-                                <div className={`mt-1 p-1.5 rounded-full ${m.priority === 'high' || m.priority === 'critical' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                <div className={`mt-1 p-1.5 rounded-full ${m.priority === 'urgent' || m.priority === 'high' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>
                                     <Wrench className="w-3 h-3" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium">{m.issueTitle}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{m.resource.name} • Reported by {m.reporter.name}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{m.resource?.name} • Reported by {m.reporter?.name}</p>
                                 </div>
                                 <span className="ml-auto text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground capitalize">
                                     {m.status.replace('_', ' ')}
                                 </span>
                             </div>
                         ))}
-                        {(!maintenance || maintenance.length === 0) && (
+                        {activeMaintenance.length === 0 && (
                             <p className="text-sm text-muted-foreground text-center py-4">No active maintenance issues.</p>
                         )}
                     </div>

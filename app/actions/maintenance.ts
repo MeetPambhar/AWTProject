@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { MaintenanceStatus, Priority } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 import { unstable_cache } from 'next/cache';
 
@@ -80,6 +80,7 @@ export async function createMaintenanceReport(prevState: any, formData: FormData
         });
         // Optional: trigger notification here
         revalidatePath('/dashboard/maintenance');
+        updateTag('maintenance');
         return { success: true, message: 'Maintenance request submitted successfully!' };
     } catch (error) {
         console.error('Maintenance error:', error);
@@ -102,6 +103,7 @@ export async function updateMaintenanceStatus(id: number, status: MaintenanceSta
             data,
         });
         revalidatePath('/dashboard/maintenance');
+        updateTag('maintenance');
         return { success: true, data: report };
     } catch (error) {
         return { success: false, error: 'Failed to update maintenance status' };
@@ -115,6 +117,7 @@ export async function updateMaintenanceReport(id: number, data: any) {
             data,
         });
         revalidatePath('/dashboard/maintenance');
+        updateTag('maintenance');
         return { success: true, data: report };
     } catch (error) {
         return { success: false, error: 'Failed to update maintenance report' };
@@ -127,6 +130,7 @@ export async function deleteMaintenance(id: number) {
             where: { id },
         });
         revalidatePath('/dashboard/maintenance');
+        updateTag('maintenance');
         return { success: true };
     } catch (error) {
         return { success: false, error: 'Failed to delete maintenance report' };

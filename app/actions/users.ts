@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { User, Role } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 import { unstable_cache } from 'next/cache';
 
@@ -90,6 +90,7 @@ export async function createUser(prevState: any, formData: FormData) {
             },
         });
         revalidatePath('/dashboard/users');
+        updateTag('users');
         return { success: true, message: 'User created successfully!' };
     } catch (error) {
         console.error('Error creating user:', error);
@@ -104,6 +105,7 @@ export async function updateUser(id: number, data: Partial<User>) {
             data,
         });
         revalidatePath('/dashboard/users');
+        updateTag('users');
         return { success: true, data: user };
     } catch (error) {
         return { success: false, error: 'Failed to update user' };
@@ -116,6 +118,7 @@ export async function deleteUser(id: number) {
             where: { id },
         });
         revalidatePath('/dashboard/users');
+        updateTag('users');
         return { success: true };
     } catch (error) {
         return { success: false, error: 'Failed to delete user' };

@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { Resource, ResourceStatus } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -126,6 +126,7 @@ export async function saveResource(prevState: any, formData: FormData) {
                 data,
             });
             revalidatePath('/dashboard/resources');
+            updateTag('resources');
             return { success: true, message: 'Resource updated successfully!' };
         } else {
             await prisma.resource.create({
@@ -135,6 +136,7 @@ export async function saveResource(prevState: any, formData: FormData) {
                 },
             });
             revalidatePath('/dashboard/resources');
+            updateTag('resources');
             return { success: true, message: 'Resource created successfully!' };
         }
     } catch (error) {
@@ -150,6 +152,7 @@ export async function updateResourceStatus(id: number, status: ResourceStatus) {
             data: { status },
         });
         revalidatePath('/dashboard/resources');
+        updateTag('resources');
         return { success: true, data: resource };
     } catch (error) {
         return { success: false, error: 'Failed to update resource status' };
@@ -163,6 +166,7 @@ export async function updateResource(id: number, data: any) {
             data,
         });
         revalidatePath('/dashboard/resources');
+        updateTag('resources');
         return { success: true, data: resource };
     } catch (error) {
         return { success: false, error: 'Failed to update resource' };
@@ -175,6 +179,7 @@ export async function deleteResource(id: number) {
             where: { id },
         });
         revalidatePath('/dashboard/resources');
+        updateTag('resources');
         return { success: true };
     } catch (error) {
         return { success: false, error: 'Failed to delete resource' };

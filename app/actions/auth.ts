@@ -66,5 +66,5 @@ export async function register(prevState: any, formData: FormData) {
 
 export async function logout() {
     await deleteSession();
-    redirect('/login');
+    return { success: true };
 }

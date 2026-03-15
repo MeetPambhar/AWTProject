@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { BookingStatus } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 import { unstable_cache } from 'next/cache';
 
@@ -111,6 +111,7 @@ export async function createBooking(prevState: any, formData: FormData) {
             },
         });
         revalidatePath('/dashboard/bookings');
+        updateTag('bookings');
         revalidatePath('/dashboard/resources');
         return { success: true, message: 'Booking request created successfully!' };
     } catch (error) {
@@ -136,6 +137,7 @@ export async function updateBookingStatus(id: number, status: BookingStatus, app
             data,
         });
         revalidatePath('/dashboard/bookings');
+        updateTag('bookings');
         return { success: true, data: booking };
     } catch (error) {
         return { success: false, error: 'Failed to update booking status' };
@@ -149,6 +151,7 @@ export async function updateBooking(id: number, data: any) {
             data,
         });
         revalidatePath('/dashboard/bookings');
+        updateTag('bookings');
         return { success: true, data: booking };
     } catch (error) {
         return { success: false, error: 'Failed to update booking' };
@@ -161,6 +164,7 @@ export async function deleteBooking(id: number) {
             where: { id },
         });
         revalidatePath('/dashboard/bookings');
+        updateTag('bookings');
         return { success: true };
     } catch (error) {
         return { success: false, error: 'Failed to delete booking' };

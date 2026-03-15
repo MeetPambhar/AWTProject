@@ -18,15 +18,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // 4. Redirect authenticated users away from auth routes
-    if (isAuthRoute && payload) {
+    // 4. Removed the auto-redirect away from auth routes so users can explicitly switch accounts or see the login page.
+
+    // 5. RBAC: Restrict admin-only routes
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/dashboard/users') || 
+                         request.nextUrl.pathname.startsWith('/dashboard/maintenance');
+                         
+    if (isAdminRoute && payload?.role !== 'admin') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-
-    // 5. RBAC: Example - Restrict specific admin routes if needed (Optional for now)
-    // if (request.nextUrl.pathname.startsWith('/dashboard/admin') && payload?.role !== 'admin') {
-    //   return NextResponse.redirect(new URL('/dashboard', request.url));
-    // }
 
     return NextResponse.next();
 }
