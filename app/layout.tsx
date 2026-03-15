@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="bg-background font-sans antialiased text-foreground">
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+      <body className="bg-background font-sans antialiased text-foreground" suppressHydrationWarning>
         {children}
         <Toaster richColors position="top-right" />
       </body>
