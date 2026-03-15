@@ -21,7 +21,7 @@ export async function getUsers(params?: { q?: string; role?: string; department?
                         { email: { contains: params.q } },
                     ];
                 }
-
+                
                 if (params?.role) {
                     where.role = params.role as Role;
                 }

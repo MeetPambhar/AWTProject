@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -50,12 +50,12 @@ enum MaintenanceStatus {
 
 model User {
   id        Int      @id @default(autoincrement()) @map("user_id")
-  name      String   @db.VarChar(100)
-  email     String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(255)
+  name      String
+  email     String   @unique
+  password  String
   role      Role     @default(user)
-  department String? @db.VarChar(100)
-  phone     String?  @db.VarChar(20)
+  department String?
+  phone     String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   isActive  Boolean  @default(true) @map("is_active")
@@ -71,10 +71,10 @@ model User {
 
 model Building {
   id           Int      @id @default(autoincrement()) @map("building_id")
-  name         String   @map("building_name") @db.VarChar(100)
-  location     String?  @db.VarChar(255)
+  name         String   @map("building_name")
+  location     String?
   floors       Int?     @default(1)
-  description  String?  @db.Text
+  description  String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -85,9 +85,9 @@ model Building {
 
 model ResourceType {
   id          Int      @id @default(autoincrement()) @map("type_id")
-  name        String   @unique @map("type_name") @db.VarChar(100)
-  description String?  @db.Text
-  icon        String?  @db.VarChar(50)
+  name        String   @unique @map("type_name")
+  description String?
+  icon        String?
   createdAt   DateTime @default(now()) @map("created_at")
 
   resources   Resource[]
@@ -97,13 +97,13 @@ model ResourceType {
 
 model Resource {
   id          Int            @id @default(autoincrement()) @map("resource_id")
-  name        String         @map("resource_name") @db.VarChar(100)
+  name        String         @map("resource_name")
   typeId      Int            @map("type_id")
   buildingId  Int            @map("building_id")
   floorNumber Int?           @map("floor_number")
   capacity    Int?
   status      ResourceStatus @default(available)
-  description String?        @db.Text
+  description String?
   amenities   Json?
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
@@ -123,11 +123,11 @@ model Resource {
 model Facility {
   id              Int             @id @default(autoincrement()) @map("facility_id")
   resourceId      Int             @map("resource_id")
-  name            String          @map("facility_name") @db.VarChar(100)
+  name            String          @map("facility_name")
   quantity        Int?            @default(1)
   conditionStatus ConditionStatus @default(good) @map("condition_status")
-  lastChecked     DateTime?       @map("last_checked") @db.Date
-  notes           String?         @db.Text
+  lastChecked     DateTime?       @map("last_checked")
+  notes           String?
 
   resource        Resource        @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
@@ -138,14 +138,14 @@ model Booking {
   id             Int           @id @default(autoincrement()) @map("booking_id")
   resourceId     Int           @map("resource_id")
   userId         Int           @map("user_id")
-  bookingDate    DateTime      @map("booking_date") @db.Date
-  startTime      DateTime      @map("start_time") @db.Time
-  endTime        DateTime      @map("end_time") @db.Time
-  purpose        String?       @db.VarChar(255)
+  bookingDate    DateTime      @map("booking_date")
+  startTime      DateTime      @map("start_time")
+  endTime        DateTime      @map("end_time")
+  purpose        String?
   status         BookingStatus @default(pending)
   approverId     Int?          @map("approver_id")
   approvedAt     DateTime?     @map("approved_at")
-  rejectionReason String?      @map("rejection_reason") @db.Text
+  rejectionReason String?      @map("rejection_reason")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
@@ -162,12 +162,12 @@ model Maintenance {
   id               Int               @id @default(autoincrement()) @map("maintenance_id")
   resourceId       Int               @map("resource_id")
   reportedBy       Int               @map("reported_by")
-  issueTitle       String            @map("issue_title") @db.VarChar(200)
-  issueDescription String?           @map("issue_description") @db.Text
+  issueTitle       String            @map("issue_title")
+  issueDescription String?           @map("issue_description")
   priority         Priority          @default(medium)
   status           MaintenanceStatus @default(reported)
-  assignedTo       String?           @map("assigned_to") @db.VarChar(100)
-  resolutionNotes  String?           @map("resolution_notes") @db.Text
+  assignedTo       String?           @map("assigned_to")
+  resolutionNotes  String?           @map("resolution_notes")
   reportedAt       DateTime          @default(now()) @map("reported_at")
   resolvedAt       DateTime?         @map("resolved_at")
 
@@ -181,8 +181,8 @@ model Maintenance {
 model Cupboard {
   id              Int      @id @default(autoincrement()) @map("cupboard_id")
   resourceId      Int      @map("resource_id")
-  name            String   @map("cupboard_name") @db.VarChar(100)
-  locationInRoom  String?  @map("location_in_room") @db.VarChar(100)
+  name            String   @map("cupboard_name")
+  locationInRoom  String?  @map("location_in_room")
   totalShelves    Int?     @default(1) @map("total_shelves")
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -196,8 +196,8 @@ model Shelf {
   id             Int      @id @default(autoincrement()) @map("shelf_id")
   cupboardId     Int      @map("cupboard_id")
   shelfNumber    Int      @map("shelf_number")
-  capacity       String?  @db.VarChar(50)
-  currentItems   String?  @map("current_items") @db.Text
+  capacity       String?
+  currentItems   String?  @map("current_items")
   isAvailable    Boolean? @default(true) @map("is_available")
 
   cupboard       Cupboard @relation(fields: [cupboardId], references: [id], onDelete: Cascade)
